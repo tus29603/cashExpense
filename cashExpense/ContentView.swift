@@ -10,57 +10,55 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @EnvironmentObject private var toastManager: ToastManager
+    @EnvironmentObject private var lockManager: LockManager
+    @Environment(\.scenePhase) private var scenePhase
+    
+    @Query(sort: \AppConfig.createdAt, order: .forward) private var configs: [AppConfig]
+    @Query(sort: \Category.sortOrder, order: .forward) private var categories: [Category]
+    @Query(sort: \Expense.createdAt, order: .reverse) private var expenses: [Expense]
+    
+    private var config: AppConfig? { configs.first }
 
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
+        RootTabView()
+            .onAppear {
+                SeedData.ensureSeeded(modelContext: modelContext)
+                lockManager.syncConfig(config)
             }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
-            .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
+            .onChange(of: config?.hasPro) { _, _ in
+                lockManager.syncConfig(config)
+            }
+            .onChange(of: config?.isAppLockEnabled) { _, _ in
+                lockManager.syncConfig(config)
+            }
+            .onChange(of: scenePhase) { _, newValue in
+                lockManager.handleScenePhaseChange(newValue)
+            }
+            .sheet(isPresented: Binding(get: {
+                guard let config else { return false }
+                return !config.hasSeenOnboarding
+            }, set: { _ in })) {
+                OnboardingView(onFinish: {
+                    guard let config else { return }
+                    config.hasSeenOnboarding = true
+                    config.updatedAt = Date()
+                })
+            }
+            .overlay {
+                if lockManager.shouldShowLockOverlay(config: config) {
+                    LockOverlayView(
+                        onUnlock: {
+                            await lockManager.unlock()
+                        }
+                    )
                 }
             }
-        } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
+            .toast(message: toastManager.message)
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: [Expense.self, Category.self, AppConfig.self], inMemory: true)
 }

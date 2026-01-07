@@ -12,7 +12,9 @@ import SwiftData
 struct cashExpenseApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Expense.self,
+            Category.self,
+            AppConfig.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -22,10 +24,15 @@ struct cashExpenseApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
+    
+    @StateObject private var toastManager = ToastManager()
+    @StateObject private var lockManager = LockManager()
 
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(toastManager)
+                .environmentObject(lockManager)
         }
         .modelContainer(sharedModelContainer)
     }
