@@ -40,7 +40,9 @@ enum SeedData {
             
             let configCount = try modelContext.fetchCount(FetchDescriptor<AppConfig>())
             if configCount == 0 {
-                let config = AppConfig(defaultCategoryId: otherId)
+                // Auto-detect currency from device locale (fallback to USD)
+                let deviceCurrency = Locale.current.currency?.identifier ?? "USD"
+                let config = AppConfig(selectedCurrencyCode: deviceCurrency, defaultCategoryId: otherId)
                 modelContext.insert(config)
             }
         } catch {

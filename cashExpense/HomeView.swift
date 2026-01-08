@@ -1,7 +1,6 @@
 //
 //  HomeView.swift
 //  cashExpense
-//
 
 import SwiftUI
 import SwiftData
@@ -112,14 +111,29 @@ struct HomeView: View {
                     .accessibilityLabel("Add expense")
                 }
                 
+                // Today empty state
+                if todayExpenses.isEmpty {
+                    Section {
+                        VStack(spacing: 8) {
+                            Image(systemName: "tray")
+                                .font(.largeTitle)
+                                .foregroundStyle(.secondary)
+                            Text("No expenses yet")
+                                .font(.headline)
+                            Text("Tap Quick Add to record your first cash expense.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                    }
+                }
+                
                 Section("Recent") {
                     if recentExpenses.isEmpty {
-                        ContentUnavailableView(
-                            "No expenses yet",
-                            systemImage: "tray",
-                            description: Text("Tap Quick Add to record your first cash expense.")
-                        )
-                        .padding(.vertical, 8)
+                        // Blank state — no card, just empty
+                        EmptyView()
                     } else {
                         ForEach(recentExpenses) { expense in
                             Button {
@@ -181,10 +195,11 @@ struct ExpenseRowView: View {
         HStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(.quaternary)
+                    .fill(category != nil ? CategoryColor.subtleBackground(for: category!.colorKey) : Color.secondary.opacity(0.15))
                     .frame(width: 36, height: 36)
                 Image(systemName: category?.icon ?? "square.grid.2x2.fill")
                     .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(category?.accentColor ?? .secondary)
             }
             
             VStack(alignment: .leading, spacing: 3) {
@@ -210,5 +225,3 @@ struct ExpenseRowView: View {
         .padding(.vertical, 4)
     }
 }
-
-

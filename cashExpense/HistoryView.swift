@@ -1,7 +1,6 @@
 //
 //  HistoryView.swift
 //  cashExpense
-//
 
 import SwiftUI
 import SwiftData
@@ -84,9 +83,9 @@ struct HistoryView: View {
             List(selection: $selection) {
                 if groupedByDay.isEmpty {
                     ContentUnavailableView(
-                        "No expenses",
+                        searchText.isEmpty ? "No expenses" : "No expenses found",
                         systemImage: "tray",
-                        description: Text("Add your first expense to see history here.")
+                        description: Text(searchText.isEmpty ? "Add your first expense to see history here." : "Try adjusting your search or filters.")
                     )
                     .padding(.vertical, 20)
                 } else {
@@ -265,16 +264,22 @@ struct HistoryFiltersView: View {
                                 }
                             } label: {
                                 HStack {
-                                    Image(systemName: category.icon)
-                                        .frame(width: 22)
-                                        .foregroundStyle(.secondary)
+                                    ZStack {
+                                        Circle()
+                                            .fill(CategoryColor.subtleBackground(for: category.colorKey))
+                                            .frame(width: 24, height: 24)
+                                        Image(systemName: category.icon)
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundStyle(category.accentColor)
+                                    }
                                     Text(category.name)
                                     Spacer()
                                     if selectedCategoryIds.contains(category.id) {
                                         Image(systemName: "checkmark")
-                                            .foregroundStyle(Color.accentColor)
+                                            .foregroundStyle(category.accentColor)
                                     }
                                 }
+                                .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                         }
@@ -296,5 +301,3 @@ struct HistoryFiltersView: View {
         }
     }
 }
-
-

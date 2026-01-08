@@ -1,7 +1,6 @@
 //
 //  SummaryView.swift
 //  cashExpense
-//
 
 import SwiftUI
 import SwiftData
@@ -49,6 +48,10 @@ struct SummaryView: View {
         ExpenseCalculations.summarize(expenses: allActiveExpenses, start: range.start, end: range.end)
     }
     
+    private var hasData: Bool {
+        summary.total > 0 || !summary.dailyTotals.isEmpty
+    }
+    
     var body: some View {
         NavigationStack {
             List {
@@ -66,59 +69,70 @@ struct SummaryView: View {
                     }
                 }
                 
-                Section("Summary") {
-                    SummaryCard(title: "Total", value: MoneyUtils.format(summary.total, currencyCode: currencyCode))
-                    SummaryCard(title: "Avg / day", value: MoneyUtils.format(summary.avgPerDay, currencyCode: currencyCode))
-                    SummaryCard(
-                        title: "Highest day",
-                        value: MoneyUtils.format(summary.highestDayTotal, currencyCode: currencyCode),
-                        subtitle: summary.highestDay.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "—"
-                    )
-                }
-                
-                Section("Daily spend") {
-                    if summary.dailyTotals.isEmpty {
-                        Text("No data for this range.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Chart {
-                            ForEach(summary.dailyTotals, id: \.day) { entry in
-                                BarMark(
-                                    x: .value("Day", entry.day, unit: .day),
-                                    y: .value("Total", NSDecimalNumber(decimal: entry.total).doubleValue)
-                                )
-                                .foregroundStyle(Color.accentColor.gradient)
-                            }
-                        }
-                        .frame(height: 140)
+                if !hasData {
+                    Section {
+                        ContentUnavailableView(
+                            "No data for this period",
+                            systemImage: "chart.bar.xaxis",
+                            description: Text("Add expenses to see your summary.")
+                        )
+                        .padding(.vertical, 16)
                     }
-                }
-                
-                Section("Category breakdown") {
-                    if summary.categoryTotals.isEmpty {
-                        Text("No data for this range.")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(summary.categoryTotals, id: \.categoryId) { row in
-                            let pct: String = {
-                                if summary.total == 0 { return "0%" }
-                                let ratio = (NSDecimalNumber(decimal: row.total).doubleValue) / max(0.000001, NSDecimalNumber(decimal: summary.total).doubleValue)
-                                return NumberFormatter.percent.string(from: NSNumber(value: ratio)) ?? "—"
-                            }()
-                            
-                            HStack {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    Text(categoryById[row.categoryId]?.name ?? "Unknown")
-                                        .font(.headline)
-                                    Text(pct)
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
+                } else {
+                    Section("Summary") {
+                        SummaryCard(title: "Total", value: MoneyUtils.format(summary.total, currencyCode: currencyCode))
+                        SummaryCard(title: "Avg / day", value: MoneyUtils.format(summary.avgPerDay, currencyCode: currencyCode))
+                        SummaryCard(
+                            title: "Highest day",
+                            value: MoneyUtils.format(summary.highestDayTotal, currencyCode: currencyCode),
+                            subtitle: summary.highestDay.map { $0.formatted(date: .abbreviated, time: .omitted) } ?? "—"
+                        )
+                    }
+                    
+                    Section("Daily spend") {
+                        if summary.dailyTotals.isEmpty {
+                            Text("No data for this range.")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Chart {
+                                ForEach(summary.dailyTotals, id: \.day) { entry in
+                                    BarMark(
+                                        x: .value("Day", entry.day, unit: .day),
+                                        y: .value("Total", NSDecimalNumber(decimal: entry.total).doubleValue)
+                                    )
+                                    .foregroundStyle(Color.accentColor.gradient)
                                 }
-                                Spacer()
-                                Text(MoneyUtils.format(row.total, currencyCode: currencyCode))
-                                    .font(.headline)
                             }
-                            .padding(.vertical, 2)
+                            .frame(height: 140)
+                        }
+                    }
+                    
+                    Section("Category breakdown") {
+                        if summary.categoryTotals.isEmpty {
+                            Text("No data for this range.")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            ForEach(summary.categoryTotals, id: \.categoryId) { row in
+                                let pct: String = {
+                                    guard summary.total > 0 else { return "0%" }
+                                    let ratio = (NSDecimalNumber(decimal: row.total).doubleValue) / max(0.000001, NSDecimalNumber(decimal: summary.total).doubleValue)
+                                    return NumberFormatter.percent.string(from: NSNumber(value: ratio)) ?? "—"
+                                }()
+                                
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(categoryById[row.categoryId]?.name ?? "Unknown")
+                                            .font(.headline)
+                                        Text(pct)
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer()
+                                    Text(MoneyUtils.format(row.total, currencyCode: currencyCode))
+                                        .font(.headline)
+                                }
+                                .padding(.vertical, 2)
+                            }
                         }
                     }
                 }
@@ -158,5 +172,3 @@ private extension NumberFormatter {
         return f
     }()
 }
-
-

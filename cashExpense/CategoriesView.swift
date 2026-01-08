@@ -1,7 +1,6 @@
 //
 //  CategoriesView.swift
 //  cashExpense
-//
 
 import SwiftUI
 import SwiftData
@@ -18,38 +17,55 @@ struct CategoriesView: View {
         categories.first(where: { $0.id == SeedData.otherId })
     }
     
+    private var activeCategories: [Category] {
+        categories.filter { !$0.isArchived }
+    }
+    
     var body: some View {
         NavigationStack {
             List {
-                ForEach(categories) { category in
-                    HStack(spacing: 12) {
-                        Image(systemName: category.icon)
-                            .frame(width: 22)
-                            .foregroundStyle(.secondary)
-                        TextField("Name", text: Binding(get: {
-                            category.name
-                        }, set: { newValue in
-                            category.name = newValue
-                        }))
-                        
-                        Spacer()
-                        
-                        Toggle(isOn: Binding(get: {
-                            category.isArchived
-                        }, set: { newValue in
-                            if category.id == SeedData.otherId {
-                                category.isArchived = false
-                            } else {
-                                category.isArchived = newValue
+                if categories.isEmpty {
+                    ContentUnavailableView(
+                        "No categories",
+                        systemImage: "tag.slash",
+                        description: Text("Add a category to continue.")
+                    )
+                } else {
+                    ForEach(categories) { category in
+                        HStack(spacing: 12) {
+                            ZStack {
+                                Circle()
+                                    .fill(CategoryColor.subtleBackground(for: category.colorKey))
+                                    .frame(width: 24, height: 24)
+                                Image(systemName: category.icon)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(category.accentColor)
                             }
-                        })) {
-                            Text("Archived")
+                            TextField("Name", text: Binding(get: {
+                                category.name
+                            }, set: { newValue in
+                                category.name = newValue
+                            }))
+                            
+                            Spacer()
+                            
+                            Toggle(isOn: Binding(get: {
+                                category.isArchived
+                            }, set: { newValue in
+                                if category.id == SeedData.otherId {
+                                    category.isArchived = false
+                                } else {
+                                    category.isArchived = newValue
+                                }
+                            })) {
+                                Text("Archived")
+                            }
+                            .labelsHidden()
                         }
-                        .labelsHidden()
                     }
+                    .onMove(perform: move)
+                    .onDelete(perform: delete)
                 }
-                .onMove(perform: move)
-                .onDelete(perform: delete)
             }
             .navigationTitle("Categories")
             .navigationBarTitleDisplayMode(.inline)
@@ -155,5 +171,3 @@ struct AddCategorySheet: View {
         }
     }
 }
-
-

@@ -1,7 +1,6 @@
 //
 //  LockManager.swift
 //  cashExpense
-//
 
 import SwiftUI
 import LocalAuthentication
@@ -10,6 +9,7 @@ import Combine
 @MainActor
 final class LockManager: ObservableObject {
     @Published private(set) var isLocked: Bool = false
+    @Published private(set) var authError: String? = nil
     private var isEnabled: Bool = false
     
     func syncConfig(_ config: AppConfig?) {
@@ -39,12 +39,16 @@ final class LockManager: ObservableObject {
     }
     
     func unlock() async {
+        authError = nil
         let context = LAContext()
         context.localizedCancelTitle = "Cancel"
         
         var error: NSError?
         let canEval = context.canEvaluatePolicy(.deviceOwnerAuthentication, error: &error)
-        guard canEval else { return }
+        guard canEval else {
+            authError = error?.localizedDescription ?? "Biometrics unavailable"
+            return
+        }
         
         do {
             let ok = try await context.evaluatePolicy(
@@ -53,15 +57,27 @@ final class LockManager: ObservableObject {
             )
             if ok {
                 isLocked = false
+                authError = nil
+            }
+        } catch let err as LAError {
+            switch err.code {
+            case .userCancel, .appCancel, .systemCancel:
+                // User cancelled — keep locked, allow retry
+                authError = nil
+            case .userFallback:
+                // User wants passcode — deviceOwnerAuthentication already handles this
+                authError = nil
+            default:
+                authError = err.localizedDescription
             }
         } catch {
-            // user cancelled / auth failed -> stay locked
+            authError = error.localizedDescription
         }
     }
 }
 
 struct LockOverlayView: View {
-    let onUnlock: () async -> Void
+    @ObservedObject var lockManager: LockManager
     
     var body: some View {
         ZStack {
@@ -78,8 +94,16 @@ struct LockOverlayView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 
+                if let error = lockManager.authError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                
                 Button {
-                    Task { await onUnlock() }
+                    Task { await lockManager.unlock() }
                 } label: {
                     Text("Unlock")
                         .frame(maxWidth: .infinity)
@@ -87,6 +111,13 @@ struct LockOverlayView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .padding(.top, 6)
+                
+                Button("Cancel") {
+                    // Allow user to dismiss the overlay and stay on a blurred screen
+                    // They won't be able to interact with the app until unlocked.
+                }
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
             }
             .padding(22)
             .frame(maxWidth: 340)
@@ -96,5 +127,3 @@ struct LockOverlayView: View {
         }
     }
 }
-
-

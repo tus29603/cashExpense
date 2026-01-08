@@ -47,11 +47,7 @@ struct ContentView: View {
             }
             .overlay {
                 if lockManager.shouldShowLockOverlay(config: config) {
-                    LockOverlayView(
-                        onUnlock: {
-                            await lockManager.unlock()
-                        }
-                    )
+                    LockOverlayView(lockManager: lockManager)
                 }
             }
             .toast(message: toastManager.message)

@@ -189,11 +189,11 @@ struct CategoryGrid: View {
                     VStack(spacing: 8) {
                         ZStack {
                             Circle()
-                                .fill(isSelected ? Color.accentColor.opacity(0.22) : Color.secondary.opacity(0.12))
+                                .fill(isSelected ? CategoryColor.selectedBackground(for: category.colorKey) : CategoryColor.subtleBackground(for: category.colorKey))
                                 .frame(width: 44, height: 44)
                             Image(systemName: category.icon)
                                 .font(.system(size: 18, weight: .semibold))
-                                .foregroundStyle(isSelected ? Color.accentColor : .primary)
+                                .foregroundStyle(isSelected ? category.accentColor : category.accentColor.opacity(0.8))
                         }
                         Text(category.name)
                             .font(.footnote.weight(.semibold))
@@ -204,11 +204,11 @@ struct CategoryGrid: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
                     .padding(.horizontal, 8)
-                    .background(isSelected ? Color.accentColor.opacity(0.12) : Color.clear)
+                    .background(isSelected ? CategoryColor.subtleBackground(for: category.colorKey) : Color.clear)
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay {
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(isSelected ? Color.accentColor : Color.secondary.opacity(0.22), lineWidth: 1)
+                            .stroke(isSelected ? category.accentColor.opacity(0.4) : Color.secondary.opacity(0.22), lineWidth: 1)
                     }
                 }
                 .buttonStyle(.plain)
