@@ -10,6 +10,9 @@ import SwiftData
 
 @main
 struct cashExpenseApp: App {
+    @StateObject private var toastManager = ToastManager()
+    @StateObject private var lockManager = LockManager()
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Expense.self,
@@ -24,9 +27,6 @@ struct cashExpenseApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
-    
-    @StateObject private var toastManager = ToastManager()
-    @StateObject private var lockManager = LockManager()
 
     var body: some Scene {
         WindowGroup {

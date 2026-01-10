@@ -51,7 +51,9 @@ struct OnboardingView: View {
             }
             .padding(.horizontal, 20)
             .navigationTitle("Welcome")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
         }
     }
 }

@@ -28,7 +28,9 @@ struct HistoryView: View {
     @State private var customEnd: Date = DateUtils.startOfNextMonth(.now)
     @State private var selectedCategoryIds: Set<UUID> = []
     
+    #if os(iOS)
     @State private var editMode: EditMode = .inactive
+    #endif
     @State private var selection = Set<PersistentIdentifier>()
     
     private var config: AppConfig? { configs.first }
@@ -102,6 +104,7 @@ struct HistoryView: View {
                                     )
                                 }
                                 .buttonStyle(.plain)
+                                #if os(iOS)
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button(role: .destructive) {
                                         delete(expense)
@@ -116,6 +119,7 @@ struct HistoryView: View {
                                     }
                                     .tint(.blue)
                                 }
+                                #endif
                                 .tag(expense.persistentModelID)
                             }
                         }
@@ -123,8 +127,12 @@ struct HistoryView: View {
                 }
             }
             .navigationTitle("History")
+            #if os(iOS)
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search notes or category")
             .environment(\.editMode, $editMode)
+            #else
+            .searchable(text: $searchText, prompt: "Search notes or category")
+            #endif
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -144,6 +152,7 @@ struct HistoryView: View {
                     .accessibilityLabel("Filters")
                 }
                 
+                #if os(iOS)
                 ToolbarItem(placement: .navigationBarTrailing) {
                     EditButton()
                 }
@@ -158,6 +167,7 @@ struct HistoryView: View {
                         .disabled(selection.isEmpty)
                     }
                 }
+                #endif
             }
             .sheet(isPresented: $showingAdd) {
                 AddEditExpenseView(mode: .add, onDone: {})
@@ -206,7 +216,9 @@ struct HistoryView: View {
             }
         }
         toastManager.show("Deleted")
+        #if os(iOS)
         editMode = .inactive
+        #endif
     }
 }
 
@@ -292,7 +304,9 @@ struct HistoryFiltersView: View {
                 }
             }
             .navigationTitle("Filters")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }

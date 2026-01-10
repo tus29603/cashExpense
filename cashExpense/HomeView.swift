@@ -146,6 +146,7 @@ struct HomeView: View {
                                 )
                             }
                             .buttonStyle(.plain)
+                            #if os(iOS)
                             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                 Button(role: .destructive) {
                                     delete(expense)
@@ -160,6 +161,7 @@ struct HomeView: View {
                                 }
                                 .tint(.blue)
                             }
+                            #endif
                         }
                     }
                 }

@@ -55,6 +55,8 @@ struct DefaultCategoryPickerView: View {
             }
         }
         .navigationTitle("Default category")
+        #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 }

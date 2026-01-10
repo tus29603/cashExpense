@@ -85,7 +85,9 @@ struct ExportCSVView: View {
                 }
             }
             .navigationTitle("Export CSV")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }

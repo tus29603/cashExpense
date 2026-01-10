@@ -57,4 +57,6 @@ struct ContentView: View {
 #Preview {
     ContentView()
         .modelContainer(for: [Expense.self, Category.self, AppConfig.self], inMemory: true)
+        .environmentObject(ToastManager())
+        .environmentObject(LockManager())
 }

@@ -55,8 +55,10 @@ struct AddEditExpenseView: View {
             Form {
                 Section {
                     TextField("0.00", text: $amountText)
+                        #if os(iOS)
                         .keyboardType(.decimalPad)
-                        .font(.largeTitle.weight(.bold))
+                        #endif
+                        .font(Font.largeTitle.weight(.bold))
                         .focused($amountFocused)
                         .accessibilityLabel("Amount")
                     
@@ -83,7 +85,9 @@ struct AddEditExpenseView: View {
                 }
             }
             .navigationTitle(modeTitle)
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

@@ -198,9 +198,15 @@ struct CurrencyPickerView: View {
                     }
                 }
             }
+            #if os(iOS)
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search currencies")
+            #else
+            .searchable(text: $searchText, prompt: "Search currencies")
+            #endif
             .navigationTitle("Currency")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }

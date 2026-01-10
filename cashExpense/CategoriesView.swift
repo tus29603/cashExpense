@@ -68,14 +68,18 @@ struct CategoriesView: View {
                 }
             }
             .navigationTitle("Categories")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
                 }
+                #if os(iOS)
                 ToolbarItem(placement: .primaryAction) {
                     EditButton()
                 }
+                #endif
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showingAdd = true
@@ -134,7 +138,9 @@ struct AddCategorySheet: View {
                 }
                 Section("Icon (SF Symbol)") {
                     TextField("tag.fill", text: $icon)
+                        #if os(iOS)
                         .textInputAutocapitalization(.never)
+                        #endif
                         .autocorrectionDisabled()
                     HStack {
                         Text("Preview")
@@ -145,7 +151,9 @@ struct AddCategorySheet: View {
                 }
             }
             .navigationTitle("New Category")
+            #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
+            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
