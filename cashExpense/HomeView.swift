@@ -111,8 +111,8 @@ struct HomeView: View {
                     .accessibilityLabel("Add expense")
                 }
                 
-                // Today empty state
-                if todayExpenses.isEmpty {
+                // Empty state - only show if no expenses exist at all
+                if recentExpensesQuery.isEmpty {
                     Section {
                         VStack(spacing: 8) {
                             Image(systemName: "tray")
