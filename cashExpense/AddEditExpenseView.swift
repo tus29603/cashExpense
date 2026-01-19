@@ -35,6 +35,7 @@ struct AddEditExpenseView: View {
     @State private var note: String = ""
     @State private var dateSpent: Date = Date()
     @State private var selectedCurrencyCode: String = ""
+    @State private var showNoteField: Bool = false
     
     private var config: AppConfig? { configs.first }
     
@@ -51,15 +52,15 @@ struct AddEditExpenseView: View {
     }
     
     private var canSave: Bool {
-        guard let parsedAmount else { return false }
-        return parsedAmount > 0
+        guard let parsedAmount, parsedAmount > 0 else { return false }
+        return selectedCategoryId != nil
     }
     
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    HStack(alignment: .center, spacing: 12) {
+                    HStack(alignment: .center, spacing: 8) {
                         TextField("0.00", text: $amountText)
                             #if os(iOS)
                             .keyboardType(.decimalPad)
@@ -67,6 +68,26 @@ struct AddEditExpenseView: View {
                             .font(Font.largeTitle.weight(.bold))
                             .focused($amountFocused)
                             .accessibilityLabel("Amount")
+                            .onChange(of: amountText) { newValue in
+                                // Filter to allow only numbers and decimal separator
+                                let filtered = newValue.filter { $0.isNumber || $0 == "." }
+                                // Ensure only one decimal point
+                                let components = filtered.split(separator: ".")
+                                let sanitized: String
+                                if components.count > 2 {
+                                    // More than one decimal point, keep only the first
+                                    let first = String(components[0])
+                                    let second = components[1...].joined(separator: "")
+                                    sanitized = first + "." + second
+                                } else {
+                                    sanitized = filtered
+                                }
+                                
+                                // Only update if the value actually changed
+                                if sanitized != newValue {
+                                    amountText = sanitized
+                                }
+                            }
                         
                         Picker("Currency", selection: $selectedCurrencyCode) {
                             ForEach(SupportedCurrency.allCases) { currency in
@@ -74,7 +95,8 @@ struct AddEditExpenseView: View {
                             }
                         }
                         .pickerStyle(.menu)
-                        .frame(width: 80)
+                        .frame(width: 70)
+                        .labelsHidden()
                         .onChange(of: selectedCurrencyCode) { newValue in
                             // Update global config when currency changes
                             if let config, !newValue.isEmpty {
@@ -84,10 +106,30 @@ struct AddEditExpenseView: View {
                         }
                     }
                     
-                    TextField("Note (optional)", text: $note, axis: .vertical)
-                        .lineLimit(1...3)
+                    if showNoteField || !note.isEmpty {
+                        Divider()
+                            .padding(.vertical, 4)
+                        
+                        TextField("Note (optional)", text: $note, axis: .vertical)
+                            .lineLimit(1...3)
+                    } else {
+                        Button {
+                            showNoteField = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "note.text")
+                                    .font(.subheadline)
+                                Text("Add note")
+                                    .font(.subheadline)
+                            }
+                            .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 } header: {
                     Text("Amount")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
                 
                 Section("Category") {
@@ -113,6 +155,7 @@ struct AddEditExpenseView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") { save() }
                         .disabled(!canSave)
+                        .opacity(canSave ? 1.0 : 0.5)
                 }
             }
             .onAppear {
@@ -149,6 +192,7 @@ struct AddEditExpenseView: View {
             note = expense.note ?? ""
             amountText = NSDecimalNumber(decimal: MoneyUtils.roundedCurrency(expense.amount)).stringValue
             selectedCurrencyCode = expense.currencyCode
+            showNoteField = !note.isEmpty
         }
         
         if selectedCategoryId == nil {
