@@ -30,6 +30,7 @@ struct AddEditExpenseView: View {
     let onDone: () -> Void
     
     @FocusState private var amountFocused: Bool
+    @FocusState private var noteFocused: Bool
     @State private var amountText: String = ""
     @State private var selectedCategoryId: UUID?
     @State private var note: String = ""
@@ -107,14 +108,24 @@ struct AddEditExpenseView: View {
                     }
                     
                     if showNoteField || !note.isEmpty {
-                        Divider()
-                            .padding(.vertical, 4)
-                        
                         TextField("Note (optional)", text: $note, axis: .vertical)
                             .lineLimit(1...3)
+                            .focused($noteFocused)
+                            .onAppear {
+                                if showNoteField && note.isEmpty {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                                        noteFocused = true
+                                    }
+                                }
+                            }
                     } else {
                         Button {
-                            showNoteField = true
+                            withAnimation {
+                                showNoteField = true
+                            }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                noteFocused = true
+                            }
                         } label: {
                             HStack {
                                 Image(systemName: "note.text")
