@@ -56,11 +56,11 @@ struct BannerAdView: UIViewRepresentable {
     }
 }
 
-// Helper to get the test ad unit ID
+// Helper to get the production ad unit ID
 enum AdMobConfig {
     static var bannerAdUnitID: String {
-        // Test ad unit ID for testing
-        return "ca-app-pub-3940256099942544/2934735716"
+        // Production banner ad unit ID
+        return "ca-app-pub-8853742472105910/1126690814"
     }
 }
 #endif
@@ -69,9 +69,14 @@ enum AdMobConfig {
 struct AdBannerView: View {
     #if os(iOS)
     var body: some View {
-        BannerAdView(adUnitID: AdMobConfig.bannerAdUnitID)
-            .frame(height: 50)
-            .frame(maxWidth: .infinity)
+        VStack(spacing: 0) {
+            Divider()
+                .background(Color(.separator))
+            BannerAdView(adUnitID: AdMobConfig.bannerAdUnitID)
+                .frame(height: 50)
+                .frame(maxWidth: .infinity)
+                .background(Color(.systemBackground))
+        }
     }
     #else
     var body: some View {

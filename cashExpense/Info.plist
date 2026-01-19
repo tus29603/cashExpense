@@ -6,8 +6,12 @@
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Cash Expense</string>
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>ca-app-pub-8853742472105910~8777207860</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Unlock to access your expenses.</string>
 	<key>UIApplicationSceneManifest</key>

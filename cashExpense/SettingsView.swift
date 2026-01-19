@@ -4,6 +4,10 @@
 
 import SwiftUI
 import SwiftData
+#if os(iOS)
+import StoreKit
+import MessageUI
+#endif
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -15,13 +19,17 @@ struct SettingsView: View {
     @State private var showingCategories = false
     @State private var showingExport = false
     @State private var showingCurrencyPicker = false
+    #if os(iOS)
+    @State private var showingMailComposer = false
+    @State private var showingShareSheet = false
+    #endif
     
     private var config: AppConfig? { configs.first }
     
     var body: some View {
         NavigationStack {
             List {
-                Section("Preferences") {
+                Section {
                     Button {
                         showingCurrencyPicker = true
                     } label: {
@@ -30,9 +38,11 @@ struct SettingsView: View {
                             Spacer()
                             Text(config?.selectedCurrencyCode ?? deviceCurrencyCode)
                                 .foregroundStyle(.secondary)
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.tertiary)
                         }
                     }
-                    .buttonStyle(.plain)
                     
                     Picker("Week starts on", selection: Binding(get: {
                         config?.weekStart ?? .monday
@@ -46,15 +56,39 @@ struct SettingsView: View {
                         }
                     }
                     
-                    NavigationLink("Default category") {
+                    NavigationLink {
                         DefaultCategoryPickerView()
+                    } label: {
+                        HStack {
+                            Text("Default category")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.tertiary)
+                        }
                     }
+                } header: {
+                    Text("Preferences")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
                 
-                Section("Categories") {
-                    Button("Manage categories") {
+                Section {
+                    Button {
                         showingCategories = true
+                    } label: {
+                        HStack {
+                            Text("Manage categories")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(.tertiary)
+                        }
                     }
+                } header: {
+                    Text("Categories")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
                 
                 #if false
@@ -105,7 +139,7 @@ struct SettingsView: View {
                 }
                 #endif
                 
-                Section("About") {
+                Section {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("All data is stored locally on your device.")
                         Text("No account required.")
@@ -117,14 +151,45 @@ struct SettingsView: View {
                     
                     LabeledContent("Version", value: appVersionString)
                     
-                    Link("Contact Support", destination: URL(string: "mailto:support@example.com")!)
+                    #if os(iOS)
+                    if MFMailComposeViewController.canSendMail() {
+                        Button {
+                            showingMailComposer = true
+                        } label: {
+                            Text("Contact Support")
+                        }
+                    } else {
+                        Link("Contact Support", destination: mailtoURL)
+                    }
+                    
+                    Button {
+                        requestReview()
+                    } label: {
+                        Text("Rate this app")
+                    }
+                    
+                    Button {
+                        showingShareSheet = true
+                    } label: {
+                        Text("Share app")
+                    }
+                    #else
+                    Link("Contact Support", destination: mailtoURL)
+                    #endif
                     
                     Text("For personal tracking only.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
+                } header: {
+                    Text("About")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
             }
             .navigationTitle("Settings")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.large)
+            #endif
             .onAppear {
                 SeedData.ensureSeeded(modelContext: modelContext)
             }
@@ -143,6 +208,17 @@ struct SettingsView: View {
                     config.updatedAt = Date()
                 }))
             }
+            #if os(iOS)
+            .sheet(isPresented: $showingMailComposer) {
+                MailComposeView(
+                    subject: "Cash Expense Support",
+                    body: mailBody
+                )
+            }
+            .sheet(isPresented: $showingShareSheet) {
+                ShareSheet(activityItems: shareItems)
+            }
+            #endif
         }
     }
     
@@ -155,6 +231,41 @@ struct SettingsView: View {
     private var deviceCurrencyCode: String {
         Locale.current.currency?.identifier ?? "USD"
     }
+    
+    #if os(iOS)
+    private var mailBody: String {
+        let version = appVersionString
+        let iosVersion = UIDevice.current.systemVersion
+        return """
+        App Version: \(version)
+        iOS Version: \(iosVersion)
+        
+        Please describe your issue or question below:
+        
+        
+        """
+    }
+    
+    private var mailtoURL: URL {
+        let version = appVersionString
+        let iosVersion = UIDevice.current.systemVersion
+        let body = mailBody.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        let subject = "Cash Expense Support".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        return URL(string: "mailto:support@example.com?subject=\(subject)&body=\(body)") ?? URL(string: "mailto:support@example.com")!
+    }
+    
+    private var shareItems: [Any] {
+        let appName = Bundle.main.infoDictionary?["CFBundleDisplayName"] as? String ?? "Cash Expense"
+        let appStoreURL = "https://apps.apple.com/app/id\(Bundle.main.bundleIdentifier ?? "")"
+        return ["Check out \(appName): \(appStoreURL)"]
+    }
+    
+    private func requestReview() {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            SKStoreReviewController.requestReview(in: windowScene)
+        }
+    }
+    #endif
 }
 
 // MARK: - Currency Picker
@@ -318,3 +429,53 @@ enum SupportedCurrency: String, CaseIterable, Identifiable {
         }
     }
 }
+
+// MARK: - Mail Compose View
+
+#if os(iOS)
+struct MailComposeView: UIViewControllerRepresentable {
+    let subject: String
+    let body: String
+    @Environment(\.dismiss) private var dismiss
+    
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let composer = MFMailComposeViewController()
+        composer.mailComposeDelegate = context.coordinator
+        composer.setSubject(subject)
+        composer.setMessageBody(body, isHTML: false)
+        return composer
+    }
+    
+    func updateUIViewController(_ uiViewController: MFMailComposeViewController, context: Context) {}
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(dismiss: dismiss)
+    }
+    
+    class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        let dismiss: DismissAction
+        
+        init(dismiss: DismissAction) {
+            self.dismiss = dismiss
+        }
+        
+        func mailComposeController(_ controller: MFMailComposeViewController, didFinishWith result: MFMailComposeResult, error: Error?) {
+            dismiss()
+        }
+    }
+}
+
+// MARK: - Share Sheet
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+    @Environment(\.dismiss) private var dismiss
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+#endif
