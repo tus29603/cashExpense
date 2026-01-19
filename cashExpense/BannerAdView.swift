@@ -14,39 +14,6 @@
 import SwiftUI
 
 #if os(iOS)
-import Foundation
-import UIKit
-
-// TEMPORARY PLACEHOLDER - Remove this section after adding GoogleMobileAds package
-struct BannerAdView: UIViewRepresentable {
-    let adUnitID: String
-    
-    func makeUIView(context: Context) -> UIView {
-        let view = UIView()
-        view.backgroundColor = .systemGray6
-        view.layer.cornerRadius = 4
-        
-        let label = UILabel()
-        label.text = "Ad"
-        label.textAlignment = .center
-        label.font = .systemFont(ofSize: 12, weight: .medium)
-        label.textColor = .secondaryLabel
-        label.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(label)
-        
-        NSLayoutConstraint.activate([
-            label.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            label.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        ])
-        
-        return view
-    }
-    
-    func updateUIView(_ uiView: UIView, context: Context) {}
-}
-
-// UNCOMMENT THIS SECTION AFTER ADDING GOOGLE MOBILE ADS PACKAGE:
-/*
 import GoogleMobileAds
 
 struct BannerAdView: UIViewRepresentable {
@@ -56,8 +23,8 @@ struct BannerAdView: UIViewRepresentable {
         Coordinator()
     }
     
-    func makeUIView(context: Context) -> GADBannerView {
-        let banner = GADBannerView(adSize: GADAdSizeBanner)
+    func makeUIView(context: Context) -> BannerView {
+        let banner = BannerView(adSize: AdSizeBanner)
         banner.adUnitID = adUnitID
         context.coordinator.bannerView = banner
         
@@ -68,13 +35,13 @@ struct BannerAdView: UIViewRepresentable {
             context.coordinator.rootViewController = rootViewController
         }
         
-        let request = GADRequest()
+        let request = Request()
         banner.load(request)
         
         return banner
     }
     
-    func updateUIView(_ uiView: GADBannerView, context: Context) {
+    func updateUIView(_ uiView: BannerView, context: Context) {
         // Update root view controller if needed
         if let rootVC = context.coordinator.rootViewController {
             if uiView.rootViewController != rootVC {
@@ -84,22 +51,16 @@ struct BannerAdView: UIViewRepresentable {
     }
     
     class Coordinator: NSObject {
-        weak var bannerView: GADBannerView?
+        weak var bannerView: BannerView?
         weak var rootViewController: UIViewController?
     }
 }
-*/
 
-// Helper to get the correct ad unit ID based on build configuration
+// Helper to get the production ad unit ID
 enum AdMobConfig {
     static var bannerAdUnitID: String {
-        #if DEBUG
-        // Test ad unit for development
-        return "ca-app-pub-3940256099942544/2934735716"
-        #else
-        // Production ad unit
-        return "ca-app-pub-8853742472105910/4965067318"
-        #endif
+        // Production banner ad unit ID
+        return "ca-app-pub-8853742472105910/1126690814"
     }
 }
 #endif
@@ -108,9 +69,14 @@ enum AdMobConfig {
 struct AdBannerView: View {
     #if os(iOS)
     var body: some View {
-        BannerAdView(adUnitID: AdMobConfig.bannerAdUnitID)
-            .frame(height: 50)
-            .frame(maxWidth: .infinity)
+        VStack(spacing: 0) {
+            Divider()
+                .background(Color(.separator))
+            BannerAdView(adUnitID: AdMobConfig.bannerAdUnitID)
+                .frame(height: 50)
+                .frame(maxWidth: .infinity)
+                .background(Color(.systemBackground))
+        }
     }
     #else
     var body: some View {

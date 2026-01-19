@@ -8,10 +8,9 @@
 import SwiftUI
 import SwiftData
 
-// TEMPORARY: Comment out until GoogleMobileAds package is added
-// #if os(iOS)
-// import GoogleMobileAds
-// #endif
+#if os(iOS)
+import GoogleMobileAds
+#endif
 
 @main
 struct cashExpenseApp: App {
@@ -20,15 +19,8 @@ struct cashExpenseApp: App {
     
     init() {
         #if os(iOS)
-        // Verify App ID exists in Info.plist
-        if let appID = Bundle.main.object(forInfoDictionaryKey: "GADApplicationIdentifier") as? String {
-            print("✅ AdMob App ID found: \(appID)")
-            
-            // UNCOMMENT AFTER ADDING GOOGLE MOBILE ADS PACKAGE:
-            // GADMobileAds.sharedInstance().start(completionHandler: nil)
-        } else {
-            print("⚠️ WARNING: GADApplicationIdentifier not found in Info.plist! Add it to target's Info.plist settings.")
-        }
+        // Initialize Google Mobile Ads SDK once on app launch
+        MobileAds.shared.start(completionHandler: nil)
         #endif
     }
     

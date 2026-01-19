@@ -34,11 +34,16 @@ struct AddEditExpenseView: View {
     @State private var selectedCategoryId: UUID?
     @State private var note: String = ""
     @State private var dateSpent: Date = Date()
+    @State private var selectedCurrencyCode: String = ""
     
     private var config: AppConfig? { configs.first }
     
-    private var currencyCode: String {
+    private var defaultCurrencyCode: String {
         config?.selectedCurrencyCode ?? (Locale.current.currency?.identifier ?? "USD")
+    }
+    
+    private var currencyCode: String {
+        selectedCurrencyCode.isEmpty ? defaultCurrencyCode : selectedCurrencyCode
     }
     
     private var parsedAmount: Decimal? {
@@ -54,17 +59,33 @@ struct AddEditExpenseView: View {
         NavigationStack {
             Form {
                 Section {
-                    TextField("0.00", text: $amountText)
-                        #if os(iOS)
-                        .keyboardType(.decimalPad)
-                        #endif
-                        .font(Font.largeTitle.weight(.bold))
-                        .focused($amountFocused)
-                        .accessibilityLabel("Amount")
+                    HStack(alignment: .center, spacing: 12) {
+                        TextField("0.00", text: $amountText)
+                            #if os(iOS)
+                            .keyboardType(.decimalPad)
+                            #endif
+                            .font(Font.largeTitle.weight(.bold))
+                            .focused($amountFocused)
+                            .accessibilityLabel("Amount")
+                        
+                        Picker("Currency", selection: $selectedCurrencyCode) {
+                            ForEach(SupportedCurrency.allCases) { currency in
+                                Text(currency.code).tag(currency.code)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .frame(width: 80)
+                        .onChange(of: selectedCurrencyCode) { newValue in
+                            // Update global config when currency changes
+                            if let config, !newValue.isEmpty {
+                                config.selectedCurrencyCode = newValue
+                                config.updatedAt = Date()
+                            }
+                        }
+                    }
                     
-                    Text(currencyCode)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    TextField("Note (optional)", text: $note, axis: .vertical)
+                        .lineLimit(1...3)
                 } header: {
                     Text("Amount")
                 }
@@ -78,9 +99,6 @@ struct AddEditExpenseView: View {
                 }
                 
                 Section("Details") {
-                    TextField("Note (optional)", text: $note, axis: .vertical)
-                        .lineLimit(1...3)
-                    
                     DatePicker("Date/Time", selection: $dateSpent, displayedComponents: [.date, .hourAndMinute])
                 }
             }
@@ -124,15 +142,21 @@ struct AddEditExpenseView: View {
             dateSpent = Date()
             note = ""
             amountText = ""
+            selectedCurrencyCode = defaultCurrencyCode
         case .edit(let expense):
             selectedCategoryId = expense.categoryId
             dateSpent = expense.dateSpent
             note = expense.note ?? ""
             amountText = NSDecimalNumber(decimal: MoneyUtils.roundedCurrency(expense.amount)).stringValue
+            selectedCurrencyCode = expense.currencyCode
         }
         
         if selectedCategoryId == nil {
             selectedCategoryId = categories.first?.id ?? SeedData.otherId
+        }
+        
+        if selectedCurrencyCode.isEmpty {
+            selectedCurrencyCode = defaultCurrencyCode
         }
     }
     
