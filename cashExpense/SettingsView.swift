@@ -13,6 +13,9 @@ struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject private var toastManager: ToastManager
     @EnvironmentObject private var lockManager: LockManager
+    #if DEBUG
+    @EnvironmentObject private var reviewManager: ReviewManager
+    #endif
     
     @Query(sort: \AppConfig.createdAt, order: .forward) private var configs: [AppConfig]
     
@@ -22,6 +25,9 @@ struct SettingsView: View {
     #if os(iOS)
     @State private var showingMailComposer = false
     @State private var showingShareSheet = false
+    #endif
+    #if DEBUG
+    @State private var showingDebugReviewPrompt = false
     #endif
     
     private var config: AppConfig? { configs.first }
@@ -185,6 +191,22 @@ struct SettingsView: View {
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
+                
+                #if DEBUG
+                Section {
+                    Button {
+                        print("🔍 [DEBUG] Force Review Prompt button tapped")
+                        showingDebugReviewPrompt = true
+                    } label: {
+                        Text("Force Review Prompt (Debug)")
+                            .foregroundStyle(.orange)
+                    }
+                } header: {
+                    Text("Debug")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                #endif
             }
             .navigationTitle("Settings")
             #if os(iOS)
@@ -217,6 +239,11 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showingShareSheet) {
                 ShareSheet(activityItems: shareItems)
+            }
+            #endif
+            #if DEBUG
+            .sheet(isPresented: $showingDebugReviewPrompt) {
+                DebugReviewPromptView()
             }
             #endif
         }
@@ -267,6 +294,70 @@ struct SettingsView: View {
     }
     #endif
 }
+
+// MARK: - Debug Review Prompt
+
+#if DEBUG
+struct DebugReviewPromptView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var showingConfirmation = true
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Text("If this app has been helpful, would you mind rating it? It really helps.")
+                    .font(.body)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                
+                VStack(spacing: 12) {
+                    Button {
+                        print("🔍 [DEBUG] Rate Now tapped - requesting review")
+                        requestReview()
+                        dismiss()
+                    } label: {
+                        Text("Rate Now")
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    
+                    Button {
+                        print("🔍 [DEBUG] Not Now tapped - dismissing")
+                        dismiss()
+                    } label: {
+                        Text("Not Now")
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                    }
+                    .buttonStyle(.bordered)
+                }
+                .padding(.horizontal)
+            }
+            .padding(.vertical, 24)
+            .navigationTitle("Rate App")
+            #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+            #endif
+            .interactiveDismissDisabled()
+            .onAppear {
+                print("🔍 [DEBUG] Debug review prompt view appeared")
+            }
+        }
+        .presentationDetents([.height(220)])
+    }
+    
+    private func requestReview() {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+            print("🔍 [DEBUG] Calling SKStoreReviewController.requestReview(in: windowScene)")
+            SKStoreReviewController.requestReview(in: windowScene)
+            print("🔍 [DEBUG] Review request completed")
+        } else {
+            print("🔍 [DEBUG] ERROR: Could not get UIWindowScene")
+        }
+    }
+}
+#endif
 
 // MARK: - Currency Picker
 

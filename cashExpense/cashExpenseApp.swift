@@ -16,6 +16,7 @@ import GoogleMobileAds
 struct cashExpenseApp: App {
     @StateObject private var toastManager = ToastManager()
     @StateObject private var lockManager = LockManager()
+    @StateObject private var reviewManager = ReviewManager()
     
     init() {
         #if os(iOS)
@@ -44,6 +45,7 @@ struct cashExpenseApp: App {
             ContentView()
                 .environmentObject(toastManager)
                 .environmentObject(lockManager)
+                .environmentObject(reviewManager)
         }
         .modelContainer(sharedModelContainer)
     }

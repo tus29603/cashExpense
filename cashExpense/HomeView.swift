@@ -218,7 +218,7 @@ struct ExpenseRowView: View {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                     Spacer()
-                    Text(expense.dateSpent, format: .dateTime.hour().minute())
+                    Text(expense.dateSpent, format: .dateTime.month().day().hour().minute())
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

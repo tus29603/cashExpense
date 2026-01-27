@@ -10,8 +10,16 @@
 	<string>$(PRODUCT_NAME)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Cash Expense</string>
+	<key>CFBundleShortVersionString</key>
+	<string>2</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-8853742472105910~8777207860</string>
+	<key>CFBundleVersion</key>
+	<string>3</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Unlock to access your expenses.</string>
 	<key>UIApplicationSceneManifest</key>

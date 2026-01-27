@@ -21,6 +21,7 @@ enum AddEditMode: Identifiable {
 struct AddEditExpenseView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject private var reviewManager: ReviewManager
     
     @Query(sort: \AppConfig.createdAt, order: .forward) private var configs: [AppConfig]
     @Query(filter: #Predicate<Category> { $0.isArchived == false }, sort: \Category.sortOrder, order: .forward)
@@ -179,6 +180,9 @@ struct AddEditExpenseView: View {
             .onTapGesture {
                 amountFocused = false
             }
+            .sheet(isPresented: $reviewManager.showingReviewPrompt) {
+                ReviewPromptView(reviewManager: reviewManager)
+            }
         }
     }
     
@@ -233,6 +237,8 @@ struct AddEditExpenseView: View {
                 isDeleted: false
             )
             modelContext.insert(exp)
+            // Track expense for review prompt
+            reviewManager.recordExpenseAdded()
         case .edit(let expense):
             expense.amount = amount
             expense.currencyCode = currencyCode
